@@ -1,0 +1,61 @@
+name: qmem
+version: 0.1.0
+spec: '0.1'
+kind: ip
+lang: bsv
+identity:
+  slug: qmem-tapeout-bsv
+  display_name: SPI flash and PSRAM controller
+  summary: 'Execute in place from an SPI flash and keep data in an SPI PSRAM: two chips on
+    one SCK and IO, one window on the bus.'
+  category: memory
+  subcategories:
+  - flash
+  - psram
+  ip_family: qmem
+  maturity: simulated
+contract:
+  version: 1
+  ctrl:
+    shape: flat
+    # 低一半是 Flash、高一半是 PSRAM，各最多 16 MiB
+    aw: 25
+    dw: 32
+params:
+  # 片子容量，字节数取 2 的幂：W25Q128 是 24，APS6404L 是 23
+  flashBits:
+    type: int
+    default: 24
+    range: [10, 24]
+  ramBits:
+    type: int
+    default: 23
+    range: [10, 24]
+  # SCK 是系统时钟的 1/(2·div)。0x03 读 Flash 不超过 50 MHz、PSRAM 不超过 33 MHz
+  div:
+    type: int
+    default: 2
+    range: [1, 8]
+  # 系统时钟频率，上电等待按它折成拍数
+  mhz:
+    type: int
+    default: 50
+    range: [1, 200]
+test:
+  extra:
+  - { div: 1 }
+  - { div: 3 }
+emit:
+- kind: bsv
+  package: Qmem
+  module: mkQmem
+  config_type: QmemCfg
+  interface: QmemIfc
+  # 每一笔都要等片子，没有同拍答的形态
+  ctrl_slow: mem
+  slow_when: true
+  pins:
+  - name: pins
+    type: QmemPins
+deps:
+  hwcore: ^0.1
